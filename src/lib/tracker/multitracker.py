@@ -225,10 +225,10 @@ class JDETracker(object):
         self.model = self.model.to(opt.device)
         self.model.eval()
         #####
-        self.reid_model = create_model(opt.arch, opt.heads, opt.head_conv)
-        self.reid_model = load_model(self.reid_model, '/home/anhkhoa/Lam_working/human_tracking/FairMOT/exp/mot/mot_17_all/model_30.pth')
-        self.reid_model = self.reid_model.to('cuda')
-        self.reid_model.eval()
+        # self.reid_model = create_model(opt.arch, opt.heads, opt.head_conv)
+        # self.reid_model = load_model(self.reid_model, '/home/anhkhoa/Lam_working/human_tracking/FairMOT/exp/mot/mot_17_all/model_30.pth')
+        # self.reid_model = self.reid_model.to('cuda')
+        # self.reid_model.eval()
 
         #####
 
@@ -320,7 +320,7 @@ class JDETracker(object):
             output = self.model(im_blob)[-1]
             hm = output['hm'].sigmoid_()
             wh = output['wh']
-            id_feature =  self.reid_model(im_blob)[-1]['id'] # output['id'] 
+            id_feature =   output['id'] # self.reid_model(im_blob)[-1]['id']
             id_feature = F.normalize(id_feature, dim=1)
 
             reg = output['reg'] if self.opt.reg_offset else None
