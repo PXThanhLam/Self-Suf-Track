@@ -1,0 +1,16 @@
+{
+    "root":"/home/anhkhoa/Lam_working/human_tracking/mot_data",
+    "train":
+    {
+        "mot17":"./data/mot17.train",
+        "mot17_test":"./data/mot17.test"
+    },
+    "test_emb":
+    {
+        "mot17":"./data/mot17.train"
+    },
+    "test":
+    {
+        "mot17":"./data/mot17.train"
+    }
+}

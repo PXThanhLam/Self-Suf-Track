@@ -1,0 +1,16 @@
+{
+    "root":"/home/anhkhoa/Lam_working/human_tracking/mot_data",
+    "train":
+    {
+        "crowdhuman_train":"./data/crowdhuman.train",
+        "crowdhuman_test":"./data/crowdhuman.val"
+    },
+    "test_emb":
+    {
+        "mot16":"./data/mot16.train"
+    },
+    "test":
+    {
+        "mot16":"./data/mot16.train"
+    }
+}
