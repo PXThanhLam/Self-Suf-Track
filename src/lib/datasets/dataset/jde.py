@@ -87,7 +87,7 @@ class LoadImages:  # for inference
 
 
 class LoadVideo:  # for inference
-    def __init__(self, path, img_size=(1088, 608)):
+    def __init__(self, path, img_size=(1088, 608), video_w = 1920, video_h = 1080):
         self.cap = cv2.VideoCapture(path)
         self.frame_rate = int(round(self.cap.get(cv2.CAP_PROP_FPS)))
         self.vw = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -98,7 +98,7 @@ class LoadVideo:  # for inference
         self.height = img_size[1]
         self.count = 0
 
-        self.w, self.h = 1920, 1080
+        self.w, self.h = video_w, video_h
         print('Lenth of the video: {:d} frames'.format(self.vn))
 
     def get_size(self, vw, vh, dw, dh):
@@ -117,7 +117,7 @@ class LoadVideo:  # for inference
         # Read image
         res, img0 = self.cap.read()  # BGR
         assert img0 is not None, 'Failed to load frame {:d}'.format(self.count)
-        img0 = cv2.resize(img0, (self.w, self.h))
+        # img0 = cv2.resize(img0, (self.w, self.h))
 
         # Padded resize
         img, _, _, _ = letterbox(img0, height=self.height, width=self.width)
@@ -202,7 +202,7 @@ class LoadImagesAndLabels:  # for training
         img_original = img.copy()
         copy_paste = random.random() < self.copypaste_prob
         if copy_paste and len(labels0) > 0:
-            img, labels0 = load_copy_paste(self, img_original , labels0, vis_thres = 0.6, keep_prob = 0.8, update_anno = True)
+            img, labels0 = load_copy_paste(self, img_original , labels0, vis_thres = 0.6, keep_prob = 0.99, update_anno = True)
         ####
 
         # adjust label and resize img
@@ -232,9 +232,9 @@ class LoadImagesAndLabels:  # for training
             if random.random() > 0.05 :
                 k_size_h = int(0.003 * height * random.random())
                 k_size_w = int(0.003 * width * random.random())
-                img_ori = cv2.GaussianBlur(img_ori,(2 * k_size_h + 1 ,2 * k_size_w + 1),0)
+                img_ori = cv2.GaussianBlur(img_ori,(2 * k_size_h + 1 ,2 * k_size_w + 1),cv2.BORDER_DEFAULT)
 
-            img_aug1, labels_aug1 = load_copy_paste(self, img_ori , labels_ori , vis_thres = 0.6, keep_prob = 0.8, update_anno = True)
+            img_aug1, labels_aug1 = load_copy_paste(self, img_ori , labels_ori , vis_thres = 0.55, keep_prob = 0.99, update_anno = False)
             # Normalized xywh to pixel xyxy format
             img_aug1, ratio, padw, padh = letterbox(img_aug1, height=height, width=width)
             labels_aug = labels_aug1.copy()
@@ -563,9 +563,9 @@ def load_copy_paste(self, original_image , anno, vis_thres = 0.6, update_anno = 
             all_patch.append([t, l, b, r])
 
     im_h, im_w, _ = original_image.shape
-    rand_idxs = np.random.randint(0, len(self.copy_paste_crop_path) - 5 * len(all_patch), 5 * len(all_patch))
-    rand_crop_path = self.copy_paste_crop_path[rand_idxs]
-    rand_crop_path_mask = self.copy_paste_mask_path[rand_idxs]
+    rand_idxs = np.random.randint(0, len(self.copy_paste_crop_path) , max(2 * len(all_patch) // 3, 2))
+    rand_crop_path = list(self.copy_paste_crop_path[rand_idxs])
+    rand_crop_path_mask = list(self.copy_paste_mask_path[rand_idxs])
 
     rand_crop_id = self.copy_paste_id[rand_idxs]
     rand_crop_img = [cv2.imread(path) for path in rand_crop_path]
@@ -578,8 +578,10 @@ def load_copy_paste(self, original_image , anno, vis_thres = 0.6, update_anno = 
         for rand_crop_h,rand_crop_w  in rand_crop_img_size :
             match_score = (min(rand_crop_w,box_w)/max(rand_crop_w,box_w) + min(rand_crop_h,box_h)/max(rand_crop_h,box_h)) / 2
             matches_score.append(match_score)
+        if len(matches_score) < 1 :
+            continue
         match_idx = np.argmax(matches_score)
-        if matches_score[match_idx] < 0.85 :
+        if matches_score[match_idx] < 0.75 :
             continue
 
         blend_img = rand_crop_img[match_idx]
@@ -609,13 +611,16 @@ def load_copy_paste(self, original_image , anno, vis_thres = 0.6, update_anno = 
             continue
         if min(rand_blend_r,im_h) - max(rand_blend_l,0) < 0 or min(rand_blend_b,im_w) - max(rand_blend_t,0) < 0 :
             continue
-        if update_anno :
-            anno.append([0,rand_crop_id[match_idx],(rand_blend_t + rand_blend_b) / 2 / im_w,(rand_blend_l + rand_blend_r) / 2 / im_h, blend_img_w / im_w, blend_img_h / im_h,1])
+        if blend_mask is None :
+            print('errr')
+            continue
         blend_mask = np.array(blend_mask) / 255
         blend_img = blend_img[0 : min(rand_blend_r,im_h) - max(rand_blend_l,0), 0 : min(rand_blend_b,im_w) - max(rand_blend_t,0),:]
         blend_mask = blend_mask[0 : min(rand_blend_r,im_h) - max(rand_blend_l,0), 0 : min(rand_blend_b,im_w) - max(rand_blend_t,0),:]
         original_image[ max(rand_blend_l,0) : min(rand_blend_r,im_h), max(rand_blend_t,0) : min(rand_blend_b,im_w), :] = \
         copy_paste(original_image[ max(rand_blend_l,0) : min(rand_blend_r,im_h), max(rand_blend_t,0) : min(rand_blend_b,im_w), :], blend_img, blend_mask)
+        if update_anno :
+            anno.append([0,rand_crop_id[match_idx],(rand_blend_t + rand_blend_b) / 2 / im_w,(rand_blend_l + rand_blend_r) / 2 / im_h, blend_img_w / im_w, blend_img_h / im_h,1])
 
     return original_image, np.array(anno)
 def collate_fn(batch):
@@ -669,9 +674,11 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 self.img_files[ds] = list(filter(lambda x: len(x) > 0, self.img_files[ds]))
 
             self.label_files[ds] = [
-                # x.replace('images', 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
-                x.replace('images_', 'labels_with_ids/').replace('.png', '.txt').replace('.jpg', '.txt')
-                for x in self.img_files[ds]]
+                x.replace('images', 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
+                # x.replace('images_', 'labels_with_ids/').replace('.png', '.txt').replace('.jpg', '.txt')
+                # x.replace('images_', 'labels_with_ids/').replace('.png', '.txt').replace('.jpg', '.txt')
+                # if 'CrowdHuman' in x else x.replace('images', 'labels_with_ids_agnous').replace('.png', '.txt').replace('.jpg', '.txt')
+                for x in self.img_files[ds] ]
 
         for ds, label_paths in tqdm(self.label_files.items()):
             max_index = -1
@@ -868,6 +875,8 @@ class DetDataset(LoadImagesAndLabels):  # for training
         self.tid_start_index = OrderedDict()
         self.mosaic_prob = 0.0
         self.self_sup_aug = False 
+        self.color_aug = False
+        self.copypaste_prob = 0.0
         for ds, path in paths.items():
             with open(path, 'r') as file:
                 self.img_files[ds] = file.readlines()
@@ -949,7 +958,7 @@ if __name__ == '__main__' :
         dataset,
         batch_size= 2,
         shuffle=True,
-        num_workers= 1,
+        num_workers= 8,
         pin_memory=True,
         drop_last=True
     )
