@@ -116,3 +116,4 @@ if __name__ == '__main__':
         tpr = test_emb(opt, batch_size=32)
 
 # python test_emb.py --load_model /home/anhkhoa/Lam_working/human_tracking/FairMOT/exp/mot/crowdhuman_dla34/model_2.pth --no_color_aug --mosaic_prob 0.0 --self_sup_aug False --conf_thres 0.4 --data_cfg '../src/lib/cfg/mot17_half.json'
+# python test_emb.py --load_model /home/anhkhoa/Lam_working/human_tracking/FairMOT/exp/mot/crowdhuman_mot17_dla34/model_2.pth --no_color_aug --mosaic_prob 0.0 --copypaste_prob 0.0 --self_sup_aug False --conf_thres 0.4 --data_cfg '../src/lib/cfg/mot17_half.json' --reid_dim 256

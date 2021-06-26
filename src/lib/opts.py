@@ -89,22 +89,26 @@ class opts(object):
     self.parser.add_argument('--no_color_aug', action='store_true',
                              help='not use the color augmenation '
                                   'from CornerNet')
-    self.parser.add_argument('--mosaic_prob', type=float, default = 0.8,
+    self.parser.add_argument('--mosaic_prob', type=float, default = 0.4,
                              help='mosaic prob')
-    self.parser.add_argument('--copypaste_prob', type=float, default = 0.9,
+    self.parser.add_argument('--copypaste_prob', type=float, default = 0.8,
                              help='mosaic prob')
     self.parser.add_argument('--mixup_prob', type=float, default = 0.2,
                              help='learning rate for batch size 12.')
     self.parser.add_argument('--self_sup_aug', type=eval, choices=[True, False], default = True,
                              help='Use self-suppervised for id loss')
-    self.parser.add_argument('--simclr_loss', type=eval, choices=[True, False],  default = True,
+    self.parser.add_argument('--simclr_loss', type=eval, choices=[True, False],  default = False,
                              help='Use simclr loss for self-sup representation')
+    self.parser.add_argument('--barlow_twin_loss', type=eval, choices=[True, False],  default = True,
+                             help='Use barlow_twin_loss loss for self-sup representation')
     self.parser.add_argument('--ce_loss', type=eval, choices=[True, False], default = False,
                              help='Use simclr loss for self-sup representation')
     self.parser.add_argument('--simclr_temp', type=int, default = 0.1,
                              help='simclr_temp')
     self.parser.add_argument('--simclr_out_dim', type=int, default = 256,
                              help='simclr_out_dim')
+    self.parser.add_argument('--barlow_out_dim', type=int, default = 512,
+                             help='barlow_out_dim')
     self.parser.add_argument("--world_size", default=-1, type=int, help="""
                     number of processes: it is set automatically and
                     should not be passed as argument""")

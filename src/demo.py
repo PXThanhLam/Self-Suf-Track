@@ -26,7 +26,7 @@ def demo(opt):
     result_filename = os.path.join(result_root, 'results_simclr.txt')
     frame_rate = dataloader.frame_rate
 
-    frame_dir = None if opt.output_format == 'text' else osp.join(result_root, 'frame_simclr')
+    frame_dir = None if opt.output_format == 'text' else osp.join(result_root, 'frame_1')
     eval_seq(opt, dataloader, 'mot', result_filename,
              save_dir=frame_dir, show_image=False, frame_rate=frame_rate,
              use_cuda=opt.gpus!=[-1])

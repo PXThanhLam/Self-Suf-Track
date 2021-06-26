@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 
-from models.losses import FocalLoss, TripletLoss, NT_Xent
+from models.losses import FocalLoss, TripletLoss, NT_Xent, BarlowTwin
 from models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss
 from models.decode import mot_decode
 from models.utils import _sigmoid, _tranpose_and_gather_feat
@@ -37,7 +37,12 @@ class MotLoss(torch.nn.Module):
         if self.opt.simclr_loss :
             self.sim_clr_predictor = nn.Sequential(nn.Linear(opt.reid_dim, opt.reid_dim), nn.ReLU(), nn.Linear(opt.reid_dim, self.opt.simclr_out_dim))
             self.sim_clr_loss = NT_Xent(self.opt.simclr_temp, self.opt.world_size)
-
+        if self.opt.barlow_twin_loss :
+            self.barlow_twin_projector = nn.Sequential(nn.Linear(opt.reid_dim, opt.barlow_out_dim, bias=False),
+                                                      nn.BatchNorm1d(opt.barlow_out_dim),nn.ReLU(), 
+                                                      nn.Linear(opt.barlow_out_dim, self.opt.barlow_out_dim, bias=False),
+                                                      nn.BatchNorm1d(opt.barlow_out_dim, affine=False))
+            self.barlow_twin_loss = BarlowTwin(self.opt)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
         self.s_id = nn.Parameter(-1.05 * torch.ones(1))
         
@@ -85,6 +90,20 @@ class MotLoss(torch.nn.Module):
                     id_head_aug_pred = self.sim_clr_predictor(id_head_aug[idx_pair[:,1]][:1500])
                     
                     id_loss += self.sim_clr_loss(id_head_pred,id_head_aug_pred)
+
+                if self.opt.self_sup_aug and self.opt.barlow_twin_loss :
+                    id_head_aug = _tranpose_and_gather_feat(outputs_aug[s]['id'], batch['ind_aug'])
+                    id_head_aug = id_head_aug[batch['reg_mask_aug'] > 0].contiguous()
+                    id_target_aug = batch['ids_aug'][batch['reg_mask_aug'] > 0]
+                    
+                    id_target_numpy = id_target.cpu().data.numpy()
+                    id_target_aug_numpy = id_target_aug.cpu().data.numpy()
+                    idx_pair = np.array(list_mapping(id_target_numpy,id_target_aug_numpy))
+
+                    id_head_pred = self.barlow_twin_projector(id_head[idx_pair[:,0]][:1500])
+                    id_head_aug_pred = self.barlow_twin_projector(id_head_aug[idx_pair[:,1]][:1500])
+                    
+                    id_loss += self.barlow_twin_loss(id_head_pred,id_head_aug_pred)
                    
 
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss

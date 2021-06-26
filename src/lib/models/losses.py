@@ -332,9 +332,30 @@ class NT_Xent(nn.Module):
         loss /= N
         return loss
 
+def off_diagonal(x):
+    # return a flattened view of the off-diagonal elements of a square matrix
+    n, m = x.shape
+    assert n == m
+    return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
+class BarlowTwin(nn.Module) :
+    def __init__(self,opt):
+          super(BarlowTwin, self).__init__()
+          self.scale_param = 1 / 12
+          self.lambd = 4e-3
+    def forward(self, z1, z2):
+        batch_size = torch.tensor(z1.shape[0]).cuda()
+        c = z1.T @ z2
 
-# if __name__ == '__main__' :
-#   z_i = torch.rand(8, 128)
-#   z_j = torch.rand(8, 128)
-#   crit = NT_Xent(1)
-#   print(crit(z_i,z_j))
+        # sum the cross-correlation matrix between all gpus
+        torch.distributed.all_reduce(batch_size)
+        torch.distributed.all_reduce(c)
+        c.div_(batch_size)
+        on_diag = torch.diagonal(c).add_(-1).pow_(2).sum().mul(self.scale_param)
+        off_diag = off_diagonal(c).pow_(2).sum().mul(self.scale_param)
+        loss = on_diag + self.lambd * off_diag
+        return loss
+if __name__ == '__main__' :
+  z_i = torch.rand(8, 128)
+  z_j = torch.rand(8, 128)
+  crit = BarlowTwin()
+  print(crit(z_i,z_j))

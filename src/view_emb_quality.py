@@ -85,7 +85,7 @@ def view_emb(
     sim = np.einsum('i,mni->mn',id_head1,id_head2)
     print(np.sort(sim.flatten())[-100:])
     sim[sim<0] = 0
-    sim[sim<0.84] /= 2
+    sim[sim<0.99] /= 2
     print(np.sort(sim.flatten())[-100:])
     sim = cv2.resize(sim,img_size)
 

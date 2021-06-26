@@ -127,5 +127,8 @@ if __name__ == '__main__':
     main(opt)
    
 
-# python -m torch.distributed.launch --nproc_per_node=4 train.py --exp_id crowdhuman_dla34 --gpus 0,1,2,3 --batch_size 8 --load_model '/home/anhkhoa/Lam_working/human_tracking/FairMOT/exp/mot/crowdhuman_dla34_ce_mosaic/model_42.pth' --num_epochs 100 --lr_step '60,80,90' --data_cfg '../src/lib/cfg/mot17.json' --lr 2e-4 
+# python -m torch.distributed.launch --nproc_per_node=4 train.py --exp_id crowdhuman_dla34 --gpus 0,1,2,3 --batch_size 6 --load_model '/home/anhkhoa/Lam_working/human_tracking/FairMOT/models/ctdet_coco_dla_2x.pth' --num_epochs 100 --lr_step '60,80,90' --data_cfg '../src/lib/cfg/crowdhuman.json' --lr 2e-4 --reid_dim 256
 # python -m torch.distributed.launch --nproc_per_node=4 train.py --exp_id mot17_half_dla34_sim --gpus 0,1,2,3 --batch_size 7 --load_model '/home/anhkhoa/Lam_working/human_tracking/FairMOT/models/ctdet_coco_dla_2x.pth' --num_epochs 30 --lr_step '20' --data_cfg '../src/lib/cfg/mot17_half.json' --lr 2e-4
+
+
+# python -m torch.distributed.launch --nproc_per_node=4 train.py --exp_id crowdhuman_mot17_dla34 --gpus 0,1,2,3 --batch_size 6 --load_model '/home/anhkhoa/Lam_working/human_tracking/FairMOT/models/ctdet_coco_dla_2x.pth' --num_epochs 100 --lr_step '60,80,90' --data_cfg '../src/lib/cfg/crowdhuman.json' --lr 2e-4 --reid_dim 256
